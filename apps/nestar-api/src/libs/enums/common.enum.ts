@@ -1,10 +1,12 @@
 export enum Message {
   SOMETHING_WENT_WRONG = "Something went wrong!",
-  NO_DATA_FOUND = "No data is found!",
-  CREATE_FAILED = "Create is failed!",
-  UPDATE_FAILED = "Update is failed!",
+  NO_DATA_FOUND = "No data  found!",
+  CREATE_FAILED = "Create  failed!",
+  UPDATE_FAILED = "Update  failed!",
   REMOVE_FAILED = "Upload failed!",
   BAD_REQUEST = "Bad Request",
+
+  USED_MEMBER_NICK_OR_PHONE="Already used member nock or phone",
   USED_NICK_PHONE = "you are inserting already used nick or phone!",
   TOKEN_CREATION_FAILED = "Token creation error",
   NO_MEMBER_NICK = "No member with that member nick!",
