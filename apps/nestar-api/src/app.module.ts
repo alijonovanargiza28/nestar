@@ -28,7 +28,6 @@ import { T } from "./libs/types/common";
       autoSchemaFile: true,
 
       formatError: (error: T) => {
-        console.log("FULL GRAPHQL ERROR:", error);
 
         const graphqlFormattedError = {
           code: error?.extensions?.code,
