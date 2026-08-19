@@ -14,14 +14,18 @@ import { AuthService } from "../auth/auth.service";
 @Injectable()
 export class MemberService {
   constructor(
-    @InjectModel("Member") private readonly memberModel: Model<Member>,private authService:AuthService) {}
+    @InjectModel("Member") private readonly memberModel: Model<Member>,
+    private authService: AuthService,
+  ) {}
 
   public async signup(input: MemberInput): Promise<Member> {
-    // TODO :HASH password
-    input.memberPassword = await this.authService.hashPassword(input.memberPassword);
+    input.memberPassword = await this.authService.hashPassword(
+      input.memberPassword,
+    );
     try {
       const result = await this.memberModel.create(input);
       //  TODO: Authentication via Token
+      result.accessToken = await this.authService.createToken(result);
       return result;
     } catch (err) {
       console.log("Error, Service.model", err);
@@ -31,7 +35,6 @@ export class MemberService {
 
   public async login(input: LoginInput): Promise<Member> {
     const { memberNick, memberPassword } = input;
-
     const response = await this.memberModel
       .findOne({ memberNick: memberNick })
       .select("+memberPassword")
@@ -51,7 +54,7 @@ export class MemberService {
     if (!isMatch) {
       throw new InternalServerErrorException(Message.WRONG_PASSWORD);
     }
-
+    response.accessToken = await this.authService.createToken(response);
     return response;
   }
 
@@ -60,5 +63,11 @@ export class MemberService {
   }
   public async getMember(): Promise<string> {
     return "get member executed";
+  }
+  public async getAllMemberByAdmin(): Promise<string> {
+    return "getAllMemberByAdmin executed!";
+  }
+  public async updateMemberByAdmin(): Promise<string> {
+    return "updateMemberByAdmin executed!";
   }
 }
