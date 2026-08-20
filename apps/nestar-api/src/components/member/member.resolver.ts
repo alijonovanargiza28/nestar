@@ -11,7 +11,7 @@ import { Message } from "../../libs/enums/common.enum";
 import { AuthGuard } from "../auth/guards/auth.guard";
 import { AuthMember } from "../auth/decorators/authMember.decorator";
 import { MemberType } from "../../libs/enums/member.enum";
-import { ObjectId } from "mongoose";
+import type{ ObjectId } from "mongoose";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { RolesGuard } from "../auth/guards/roles.guard";
 

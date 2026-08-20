@@ -10,6 +10,7 @@ import { LoginInput, MemberInput } from "../../libs/dto/member/member.input";
 import { MemberStatus } from "../../libs/enums/member.enum";
 import { Message } from "../../libs/enums/common.enum";
 import { AuthService } from "../auth/auth.service";
+import { access } from "fs";
 
 @Injectable()
 export class MemberService {
@@ -29,7 +30,7 @@ export class MemberService {
       return result;
     } catch (err) {
       console.log("Error, Service.model", err);
-      throw new BadRequestException(err);
+      throw new BadRequestException(Message.USED_MEMBER_NICK_OR_PHONE);
     }
   }
 
