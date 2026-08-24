@@ -5,7 +5,7 @@ import { AuthService } from '../auth.service';
 export class WithoutGuard implements CanActivate {
 	constructor(private authService: AuthService) {}
 
-	async canActivate(context: ExecutionContext | any): Promise<boolean> {
+	async canActivate(context: ExecutionContext | any): Promise<boolean > {
 		console.info('--- @guard() Authentication [WithoutGuard] ---');
 
 		if (context.contextType === 'graphql') {

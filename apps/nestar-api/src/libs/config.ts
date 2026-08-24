@@ -1,6 +1,18 @@
-import { ObjectId } from "bson"
-export const shapeIntoMOngoObjectId=(target:any)=>{
-    return typeof target ==='string'? new ObjectId(target):target
+import { ObjectId } from "bson";
 
-
-}
+export const availableAgentSorts = [
+  "createdAt",
+  "updatedAt",
+  "memberLikes",
+  "memberViews",
+  "memberRank",
+];
+export const availableMemberSorts = [
+  "createdAt",
+  "updatedAt",
+  "memberLikes",
+  "memberViews",
+];
+export const shapeIntoMOngoObjectId = (target: any) => {
+  return typeof target === "string" ? new ObjectId(target) : target;
+};

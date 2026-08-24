@@ -1,8 +1,9 @@
-// Asosiy app module
+// Asosiy app module bugichi
 
 import { Module } from "@nestjs/common";
 
 import { AppController } from "./app.controller";
+
 import { AppService } from "./app.service";
 
 import { ConfigModule } from "@nestjs/config";
@@ -19,9 +20,8 @@ import { T } from "./libs/types/common";
 
 @Module({
   imports: [
-    ConfigModule.forRoot(),
-
-    GraphQLModule.forRoot({
+    ConfigModule.forRoot(),//env 
+    GraphQLModule.forRoot({ //reast api => Graphql api 
       driver: ApolloDriver,
       playground: true,
       uploads: false,
@@ -38,13 +38,12 @@ import { T } from "./libs/types/common";
         };
 
         console.log("GRAPHQL GLOBAL ERR:", graphqlFormattedError);
-
         return graphqlFormattedError;
       },
-    }), // ✅ GraphQLModule shu yerda tugaydi
+    }),
 
-    ComponentsModule, // ✅ alohida import
-    DatabaseModule, // ✅ alohida import
+    ComponentsModule, 
+    DatabaseModule, 
   ],
 
   controllers: [AppController],
