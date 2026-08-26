@@ -11,7 +11,7 @@ import {
   MemberInput,
   MembersInquiry,
 } from "../../libs/dto/member/member.input";
-import { Member, Members } from "../../libs/dto/member/member";
+
 import { Message } from "../../libs/enums/common.enum";
 import { AuthGuard } from "../auth/guards/auth.guard";
 import { AuthMember } from "../auth/decorators/authMember.decorator";
@@ -24,6 +24,7 @@ import { getSerialForImage, shapeIntoMOngoObjectId, validMimeTypes } from "../..
 import { WithoutGuard } from "../auth/guards/without.guard";
 import { GraphQLUpload, FileUpload } from "graphql-upload";
 import { createWriteStream } from "fs";
+import { Member, Members } from "../../libs/dto/member/member";
 
 @Resolver()
 export class MemberResolver {
