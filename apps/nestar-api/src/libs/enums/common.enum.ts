@@ -17,6 +17,8 @@ export enum Message {
   NOT_AUTHENTICATED = "You are not authenticated, Please login first",
   TOKEN_NOT_EXIST = "Bearer Token is not provided!",
   ONLY_SPECIFIC_ROLES_ALLOWED = "ONLY_SPECIFIC_ROLES_ALLOWED",
+  UPLOAD_FAILED = "UPLOAD_FAILED",
+  PROVIDE_ALLOWED_FORMAT = "PROVIDE_ALLOWED_FORMAT",
 }
 export enum Direction {
   ASC = 1,
