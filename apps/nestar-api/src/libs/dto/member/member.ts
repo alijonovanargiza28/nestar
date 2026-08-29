@@ -1,4 +1,5 @@
 import { Field, Int, ObjectType } from "@nestjs/graphql";
+
 import {
   MemberAuthType,
   MemberStatus,
@@ -61,6 +62,9 @@ export class Member {
   memberComments!: number;
 
   @Field(() => Int)
+  memberPoints!: number;
+
+  @Field(() => Int)
   memberRank!: number;
 
   @Field(() => Int)
@@ -77,20 +81,22 @@ export class Member {
 
   @Field(() => Date)
   updatedAt!: Date;
-  @Field(()=>String ,{nullable:true})
-  accessToken?:string
-}
-@ObjectType()
-export class TotalCounter{
-  @Field(()=>Int, {nullable:true})
-  total?:number;
-}
-@ObjectType()
-export class Members{
-  @Field(()=>[Member])
-  list!:Member[]
 
-  @Field(()=>[TotalCounter], {nullable:true})
-  metaCounter!:TotalCounter[];
+  @Field(() => String, { nullable: true })
+  accessToken?: string;
+}
 
+@ObjectType()
+export class TotalCounter {
+  @Field(() => Int, { nullable: true })
+  total?: number;
+}
+
+@ObjectType()
+export class Members {
+  @Field(() => [Member])
+  list!: Member[];
+
+  @Field(() => [TotalCounter], { nullable: true })
+  metaCounter!: TotalCounter[];
 }
