@@ -23,41 +23,41 @@ export class RolesGuard implements CanActivate {
 
     console.info(`--- @guard() Authentication [RolesGuard]: ${roles} ---`);
 
-    if (context.getType() === "graphql") {
-      const request = context.getArgByIndex(2).req;
+      if (context.getType<string>() === "graphql") {
+        const request = context.getArgByIndex(2).req;
 
-      const bearerToken = request.headers.authorization;
+        const bearerToken = request.headers.authorization;
 
-      // Token umuman yuborilmagan
-      if (!bearerToken) {
-        throw new BadRequestException("Bearer token not provided");
+        // Token umuman yuborilmagan
+        if (!bearerToken) {
+          throw new BadRequestException("Bearer token not provided");
+        }
+
+        const [bearer, token] = bearerToken.split(" ");
+
+        // Bearer yoki token noto'g'ri
+        if (bearer !== "Bearer" || !token) {
+          throw new BadRequestException("Bearer token not provided");
+        }
+
+        const authMember = await this.authService.verifyToken(token);
+
+        if (!authMember) {
+          throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
+        }
+
+        const hasPermission = roles.indexOf(authMember.memberType) > -1;
+
+        if (!hasPermission) {
+          throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
+        }
+
+        console.log("memberNick[roles] =>", authMember.memberNick);
+
+        request.body.authMember = authMember;
+
+        return true;
       }
-
-      const [bearer, token] = bearerToken.split(" ");
-
-      // Bearer yoki token noto'g'ri
-      if (bearer !== "Bearer" || !token) {
-        throw new BadRequestException("Bearer token not provided");
-      }
-
-      const authMember = await this.authService.verifyToken(token);
-
-      if (!authMember) {
-        throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
-      }
-
-      const hasPermission = roles.indexOf(authMember.memberType) > -1;
-
-      if (!hasPermission) {
-        throw new ForbiddenException(Message.ONLY_SPECIFIC_ROLES_ALLOWED);
-      }
-
-      console.log("memberNick[roles] =>", authMember.memberNick);
-
-      request.body.authMember = authMember;
-
-      return true;
-    }
 
     // GraphQL bo'lmagan contextlar
     return true;

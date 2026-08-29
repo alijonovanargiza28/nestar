@@ -1,11 +1,12 @@
-import { Field, Float, ObjectType } from "@nestjs/graphql";
-import type{ ObjectId } from "mongoose";
+import { Field, Int, ObjectType } from "@nestjs/graphql";
 
 import {
   PropertyLocation,
   PropertyStatus,
   PropertyType,
 } from "../../enums/property.enum";
+
+import { Member, TotalCounter } from "../member/member";
 
 @ObjectType()
 export class Property {
@@ -27,34 +28,36 @@ export class Property {
   @Field(() => String)
   propertyTitle!: string;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertyPrice!: number;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertySquare!: number;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertyBeds!: number;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertyRooms!: number;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertyViews!: number;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertyLikes!: number;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertyComments!: number;
 
-  @Field(() => Float)
+  @Field(() => Int)
   propertyRank!: number;
 
   @Field(() => [String])
   propertyImages!: string[];
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, {
+    nullable: true,
+  })
   propertyDesc?: string;
 
   @Field(() => Boolean)
@@ -64,15 +67,21 @@ export class Property {
   propertyRent!: boolean;
 
   @Field(() => String)
-  memberId!: ObjectId;
+  memberId!: string;
 
-  @Field(() => Date, { nullable: true })
+  @Field(() => Date, {
+    nullable: true,
+  })
   soldAt?: Date;
 
-  @Field(() => Date, { nullable: true })
+  @Field(() => Date, {
+    nullable: true,
+  })
   deletedAt?: Date;
 
-  @Field(() => Date, { nullable: true })
+  @Field(() => Date, {
+    nullable: true,
+  })
   constructedAt?: Date;
 
   @Field(() => Date)
@@ -80,4 +89,22 @@ export class Property {
 
   @Field(() => Date)
   updatedAt!: Date;
+
+  /**================ Aggregation ================**/
+
+  @Field(() => Member, {
+    nullable: true,
+  })
+  memberData?: Member;
+}
+
+@ObjectType()
+export class Properties {
+  @Field(() => [Property])
+  list!: Property[];
+
+  @Field(() => [TotalCounter], {
+    nullable: true,
+  })
+  metaCounter!: TotalCounter[];
 }

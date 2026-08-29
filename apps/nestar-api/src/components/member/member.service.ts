@@ -3,21 +3,32 @@ import {
   Injectable,
   InternalServerErrorException,
 } from "@nestjs/common";
+
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, ObjectId } from "mongoose";
+
+import mongoose, { Model } from "mongoose";
+
 import {
   AgentsInquiry,
   LoginInput,
   MemberInput,
   MembersInquiry,
 } from "../../libs/dto/member/member.input";
+
 import { MemberStatus, MemberType } from "../../libs/enums/member.enum";
+
 import { Direction, Message } from "../../libs/enums/common.enum";
+
 import { AuthService } from "../auth/auth.service";
+
 import { MemberUpdate } from "../../libs/dto/member/member.update";
+
 import { StatisticModifier, T } from "../../libs/types/common";
+
 import { ViewService } from "../view/view.service";
+
 import { ViewGroup } from "../../libs/enums/view.enum";
+
 import { Member, Members } from "../../libs/dto/member/member";
 
 @Injectable()
@@ -25,9 +36,13 @@ export class MemberService {
   constructor(
     @InjectModel("Member")
     private readonly memberModel: Model<Member>,
-    private authService: AuthService,
-    private viewService: ViewService,
+
+    private readonly authService: AuthService,
+
+    private readonly viewService: ViewService,
   ) {}
+
+  /**=========================== signup =============================**/
 
   public async signup(input: MemberInput): Promise<Member> {
     input.memberPassword = await this.authService.hashPassword(
@@ -37,28 +52,36 @@ export class MemberService {
     try {
       const result = await this.memberModel.create(input);
 
-      // TODO: Authentication via Token
       result.accessToken = await this.authService.createToken(result);
 
       return result;
     } catch (err) {
-      console.log("Error, Service.model", err);
+      console.log(
+        "Error, Service.model:",
+        err instanceof Error ? err.message : err,
+      );
 
       throw new BadRequestException(Message.USED_MEMBER_NICK_OR_PHONE);
     }
   }
 
+  /**=========================== login =============================**/
+
   public async login(input: LoginInput): Promise<Member> {
     const { memberNick, memberPassword } = input;
 
     const response = await this.memberModel
-      .findOne({ memberNick: memberNick })
+      .findOne({
+        memberNick: memberNick,
+      })
       .select("+memberPassword")
       .exec();
 
     if (!response || response.memberStatus === MemberStatus.DELETE) {
       throw new BadRequestException(Message.NO_MEMBER_NICK);
-    } else if (response.memberStatus === MemberStatus.BLOCK) {
+    }
+
+    if (response.memberStatus === MemberStatus.BLOCK) {
       throw new BadRequestException(Message.BLOCKED_USER);
     }
 
@@ -76,8 +99,10 @@ export class MemberService {
     return response;
   }
 
+  /**=========================== updateMember =============================**/
+
   public async updateMember(
-    memberId: ObjectId,
+    memberId: mongoose.Types.ObjectId,
     input: MemberUpdate,
   ): Promise<Member> {
     const result = await this.memberModel
@@ -87,7 +112,9 @@ export class MemberService {
           memberStatus: MemberStatus.ACTIVE,
         },
         input,
-        { new: true },
+        {
+          new: true,
+        },
       )
       .exec();
 
@@ -100,12 +127,15 @@ export class MemberService {
     return result;
   }
 
+  /**=========================== getMember =============================**/
+
   public async getMember(
-    memberId: ObjectId,
-    targetId: ObjectId,
+    memberId: mongoose.Types.ObjectId | null,
+    targetId: mongoose.Types.ObjectId,
   ): Promise<Member> {
     const search: T = {
       _id: targetId,
+
       memberStatus: {
         $in: [MemberStatus.ACTIVE, MemberStatus.BLOCK],
       },
@@ -128,7 +158,17 @@ export class MemberService {
 
       if (newView) {
         await this.memberModel
-          .findOneAndUpdate(search, { $inc: { memberViews: 1 } }, { new: true })
+          .findOneAndUpdate(
+            search,
+            {
+              $inc: {
+                memberViews: 1,
+              },
+            },
+            {
+              new: true,
+            },
+          )
           .exec();
 
         targetMember.memberViews++;
@@ -138,8 +178,10 @@ export class MemberService {
     return targetMember;
   }
 
+  /**=========================== getAgents =============================**/
+
   public async getAgents(
-    memberId: ObjectId,
+    memberId: mongoose.Types.ObjectId,
     input: AgentsInquiry,
   ): Promise<Members> {
     const { text } = input.search;
@@ -159,29 +201,41 @@ export class MemberService {
       };
     }
 
-    console.log("match", match);
+    console.log("match:", match);
 
     const result = await this.memberModel
       .aggregate([
-        { $match: match },
-        { $sort: sort },
+        {
+          $match: match,
+        },
+
+        {
+          $sort: sort,
+        },
+
         {
           $facet: {
             list: [
               {
                 $skip: (input.page - 1) * input.limit,
               },
+
               {
                 $limit: input.limit,
               },
             ],
-            metaCounter: [{ $count: "total" }],
+
+            metaCounter: [
+              {
+                $count: "total",
+              },
+            ],
           },
         },
       ])
       .exec();
 
-    console.log("result", result);
+    console.log("result:", result);
 
     if (!result.length) {
       throw new InternalServerErrorException(Message.NO_DATA_FOUND);
@@ -189,6 +243,8 @@ export class MemberService {
 
     return result[0];
   }
+
+  /**=========================== getAllMemberByAdmin =============================**/
 
   public async getAllMemberByAdmin(input: MembersInquiry): Promise<Members> {
     const { memberStatus, memberType, text } = input.search;
@@ -213,29 +269,41 @@ export class MemberService {
       };
     }
 
-    console.log("match", match);
+    console.log("match:", match);
 
     const result = await this.memberModel
       .aggregate([
-        { $match: match },
-        { $sort: sort },
+        {
+          $match: match,
+        },
+
+        {
+          $sort: sort,
+        },
+
         {
           $facet: {
             list: [
               {
                 $skip: (input.page - 1) * input.limit,
               },
+
               {
                 $limit: input.limit,
               },
             ],
-            metaCounter: [{ $count: "total" }],
+
+            metaCounter: [
+              {
+                $count: "total",
+              },
+            ],
           },
         },
       ])
       .exec();
 
-    console.log("result", result);
+    console.log("result:", result);
 
     if (!result.length) {
       throw new InternalServerErrorException(Message.NO_DATA_FOUND);
@@ -244,9 +312,13 @@ export class MemberService {
     return result[0];
   }
 
+  /**=========================== updateMemberByAdmin =============================**/
+
   public async updateMemberByAdmin(input: MemberUpdate): Promise<Member> {
     const result = await this.memberModel
-      .findByIdAndUpdate({ _id: input._id }, input, { new: true })
+      .findByIdAndUpdate(input._id, input, {
+        new: true,
+      })
       .exec();
 
     if (!result) {
@@ -256,20 +328,24 @@ export class MemberService {
     return result;
   }
 
+  /**=========================== memberStatusEditor =============================**/
+
   public async memberStatusEditor(input: StatisticModifier): Promise<Member> {
     console.log("executed");
 
     const { _id, targetKey, modifier } = input;
 
     const result = await this.memberModel
-      .findOneAndUpdate(
+      .findByIdAndUpdate(
         _id,
         {
           $inc: {
             [targetKey]: modifier,
           },
         },
-        { new: true },
+        {
+          new: true,
+        },
       )
       .exec();
 
