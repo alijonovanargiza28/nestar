@@ -32,6 +32,13 @@ export const availablePropertySorts = [
   "propertyPrice",
 ];
 
+export const availableBoardArticleSorts = [
+  "createdAt",
+  "updatedAt",
+  "articleLikes",
+  "articleViews",
+];
+
 // =========================================================
 // IMAGE CONFIGURATION
 // =========================================================

@@ -119,32 +119,6 @@ export class PropertyService {
 
   /**=========================== propertyStatsEditor =============================**/
 
-  public async propertyStatsEditor(
-    input: StatisticModifier,
-  ): Promise<Property> {
-    const { _id, targetKey, modifier } = input;
-
-    const result = await this.propertyModel
-      .findByIdAndUpdate(
-        _id,
-        {
-          $inc: {
-            [targetKey]: modifier,
-          },
-        },
-        {
-          new: true,
-        },
-      )
-      .exec();
-
-    if (!result) {
-      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-    }
-
-    return result;
-  }
-
   /**=========================== updateProperty =============================**/
 
   public async updateProperty(
@@ -533,6 +507,31 @@ export class PropertyService {
 
     if (!result) {
       throw new InternalServerErrorException(Message.REMOVE_FAILED);
+    }
+
+    return result;
+  }
+  public async propertyStatsEditor(
+    input: StatisticModifier,
+  ): Promise<Property> {
+    const { _id, targetKey, modifier } = input;
+
+    const result = await this.propertyModel
+      .findByIdAndUpdate(
+        _id,
+        {
+          $inc: {
+            [targetKey]: modifier,
+          },
+        },
+        {
+          new: true,
+        },
+      )
+      .exec();
+
+    if (!result) {
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
     }
 
     return result;
