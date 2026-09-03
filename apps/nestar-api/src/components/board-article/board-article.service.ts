@@ -46,6 +46,8 @@ export class BoardArticleService {
     memberId: Types.ObjectId,
     input: BoardArticleInput,
   ): Promise<BoardArticle> {
+    console.log("memberId:", memberId);
+
     input.memberId = memberId;
 
     try {
@@ -60,7 +62,6 @@ export class BoardArticleService {
       return result;
     } catch (err) {
       console.log("Error, Service.model:", err);
-
       throw new BadRequestException(Message.CREATE_FAILED);
     }
   }
@@ -327,11 +328,11 @@ export class BoardArticleService {
     }
 
     // ARTICLE DELETE bo'lsa memberArticles -1
-   await this.memberService.memberStatusEditor({
-     _id: shapeIntoMongoObjectId(result.memberId),
-     targetKey: "memberArticles",
-     modifier: -1,
-   });
+    await this.memberService.memberStatusEditor({
+      _id: shapeIntoMongoObjectId(result.memberId),
+      targetKey: "memberArticles",
+      modifier: -1,
+    });
 
     return result;
   }

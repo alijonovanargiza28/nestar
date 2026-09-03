@@ -329,30 +329,47 @@ export class MemberService {
   }
 
   /**=========================== memberStatusEditor =============================**/
+public async memberStatusEditor(
+  input: StatisticModifier,
+): Promise<Member> {
+  const { _id, targetKey, modifier } = input;
 
-  public async memberStatusEditor(input: StatisticModifier): Promise<Member> {
-    console.log("executed");
+  console.log("INPUT ID:", _id);
+  console.log("MODEL COLLECTION:", this.memberModel.collection.name);
+  console.log("MODEL DB:", this.memberModel.db.name);
 
-    const { _id, targetKey, modifier } = input;
+  const allMembers = await this.memberModel
+    .find({})
+    .select("_id memberNick memberArticles")
+    .limit(10)
+    .lean()
+    .exec();
 
-    const result = await this.memberModel
-      .findByIdAndUpdate(
-        _id,
-        {
-          $inc: {
-            [targetKey]: modifier,
-          },
+  console.log("MEMBERS:", allMembers);
+
+  const member = await this.memberModel
+    .findById(_id)
+    .exec();
+
+  console.log("FOUND MEMBER:", member);
+
+  const result = await this.memberModel
+    .findByIdAndUpdate(
+      _id,
+      {
+        $inc: {
+          [targetKey]: modifier,
         },
-        {
-          new: true,
-        },
-      )
-      .exec();
+      },
+      {
+        new: true,
+      },
+    )
+    .exec();
 
-    if (!result) {
-      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
-    }
-
-    return result;
+  if (!result) {
+    throw new InternalServerErrorException(Message.NO_DATA_FOUND);
   }
-}
+
+  return result;
+}}
