@@ -39,6 +39,7 @@ export const availableBoardArticleSorts = [
   "articleViews",
 ];
 
+export const availableCommentSorts = ["createdAt", "updatedAt"];
 // =========================================================
 // IMAGE CONFIGURATION
 // =========================================================

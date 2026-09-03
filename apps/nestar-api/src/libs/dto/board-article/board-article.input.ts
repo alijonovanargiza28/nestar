@@ -1,46 +1,51 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
-import { IsIn, IsNotEmpty, IsOptional, Length, Min } from 'class-validator';
-import type { ObjectId } from 'mongoose';
-import { BoardArticleCategory, BoardArticleStatus } from '../../enums/board-article.enum';
-import { Direction } from '../../enums/common.enum';
-import { availableBoardArticleSorts } from '../../config';
+import { Field, InputType, Int } from "@nestjs/graphql";
+import { IsIn, IsNotEmpty, IsOptional, Length, Min } from "class-validator";
+import mongoose from "mongoose";
+
+import {
+  BoardArticleCategory,
+  BoardArticleStatus,
+} from "../../enums/board-article.enum";
+
+import { Direction } from "../../enums/common.enum";
+import { availableBoardArticleSorts } from "../../config";
 
 @InputType()
 export class BoardArticleInput {
-	@IsNotEmpty()
-	@Field(() => BoardArticleCategory)
-	articleCategory!: BoardArticleCategory;
+  @IsNotEmpty()
+  @Field(() => BoardArticleCategory)
+  articleCategory!: BoardArticleCategory;
 
-	@IsNotEmpty()
-	@Length(3, 50)
-	@Field(() => String)
-	articleTitle!: string;
+  @IsNotEmpty()
+  @Length(3, 50)
+  @Field(() => String)
+  articleTitle!: string;
 
-	@IsNotEmpty()
-	@Length(3, 250)
-	@Field(() => String)
-	articleContent!: string;
+  @IsNotEmpty()
+  @Length(3, 250)
+  @Field(() => String)
+  articleContent!: string;
 
-	@IsOptional()
-	@Field(() => String, { nullable: true })
-	articleImage?: string;
+  @IsOptional()
+  @Field(() => String, { nullable: true })
+  articleImage?: string;
 
-	memberId?: ObjectId;
+  memberId?: mongoose.Types.ObjectId;
 }
 
 @InputType()
 class BAISearch {
-	@IsOptional()
-	@Field(() => BoardArticleCategory, { nullable: true })
-	articleCategory?: BoardArticleCategory;
+  @IsOptional()
+  @Field(() => BoardArticleCategory, { nullable: true })
+  articleCategory?: BoardArticleCategory;
 
-	@IsOptional()
-	@Field(() => String, { nullable: true })
-	text?: string;
+  @IsOptional()
+  @Field(() => String, { nullable: true })
+  text?: string;
 
-	@IsOptional()
-	@Field(() => String, { nullable: true })
-	memberId?: ObjectId;
+  @IsOptional()
+  @Field(() => String, { nullable: true })
+  memberId?: string;
 }
 
 @InputType()
@@ -71,13 +76,13 @@ export class BoardArticlesInquiry {
 
 @InputType()
 class ABAISearch {
-	@IsOptional()
-	@Field(() => BoardArticleStatus, { nullable: true })
-	articleStatus?: BoardArticleStatus;
+  @IsOptional()
+  @Field(() => BoardArticleStatus, { nullable: true })
+  articleStatus?: BoardArticleStatus;
 
-	@IsOptional()
-	@Field(() => BoardArticleCategory, { nullable: true })
-	articleCategory?: BoardArticleCategory;
+  @IsOptional()
+  @Field(() => BoardArticleCategory, { nullable: true })
+  articleCategory?: BoardArticleCategory;
 }
 
 @InputType()
