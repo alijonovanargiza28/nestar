@@ -1,4 +1,21 @@
-import { Module } from '@nestjs/common';
+import { Module } from "@nestjs/common";
+import { MongooseModule } from "@nestjs/mongoose";
+import MemberSchema from "../../schemas/Member.model";
+import { AuthModule } from "../auth/auth.module";
+import { ViewModule } from "../view/view.module";
+import { MemberResolver } from "../member/member.resolver";
+import { FollowResolver } from './follow.resolver';
+import { FollowService } from './follow.service';
+import FollowSchema from "../../schemas/Follow.model";
+import { MemberModule } from "../member/member.module";
 
-@Module({})
+@Module({
+  imports: [
+    MongooseModule.forFeature([{ name: "Follow", schema: FollowSchema }])
+    ,AuthModule,
+    MemberModule 
+  ],
+  providers: [FollowResolver, FollowService],
+exports :[FollowService]
+})
 export class FollowModule {}

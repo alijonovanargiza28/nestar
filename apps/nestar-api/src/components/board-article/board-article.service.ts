@@ -30,6 +30,10 @@ import { StatisticModifier, T } from "../../libs/types/common";
 
 import { lookupMember, shapeIntoMongoObjectId } from "../../libs/config";
 
+import { LikeService } from "../like/like.service";
+import { LikeInput } from "../../libs/dto/like/like.input";
+import { LikeGroup } from "../../libs/enums/like.enum";
+
 @Injectable()
 export class BoardArticleService {
   constructor(
@@ -37,8 +41,8 @@ export class BoardArticleService {
     private readonly boardArticleModel: Model<BoardArticle>,
 
     private readonly memberService: MemberService,
-
     private readonly viewService: ViewService,
+    private readonly likeService: LikeService,
   ) {}
 
   // CREATE BOARD ARTICLE
@@ -62,6 +66,7 @@ export class BoardArticleService {
       return result;
     } catch (err) {
       console.log("Error, Service.model:", err);
+
       throw new BadRequestException(Message.CREATE_FAILED);
     }
   }
@@ -104,6 +109,16 @@ export class BoardArticleService {
 
         targetBoardArticle.articleViews++;
       }
+
+      // CHECK LIKE
+      const likeInput: LikeInput = {
+        memberId: memberId,
+        likeRefId: articleId,
+        likeGroup: LikeGroup.ARTICLE,
+      };
+
+      targetBoardArticle.meLiked =
+        await this.likeService.checkLikeExistence(likeInput);
     }
 
     // GET MEMBER DATA
@@ -122,8 +137,6 @@ export class BoardArticleService {
   ): Promise<BoardArticle> {
     const { _id, articleStatus } = input;
 
-    // GraphQL'dan string keladi
-    // MongoDB uchun ObjectId qilamiz
     const articleId = shapeIntoMongoObjectId(_id);
 
     const result = await this.boardArticleModel
@@ -144,7 +157,6 @@ export class BoardArticleService {
       throw new InternalServerErrorException(Message.UPDATE_FAILED);
     }
 
-    // ARTICLE DELETE bo'lsa memberArticles -1
     if (articleStatus === BoardArticleStatus.DELETE) {
       await this.memberService.memberStatusEditor({
         _id: memberId,
@@ -233,6 +245,44 @@ export class BoardArticleService {
     }
 
     return result[0];
+  }
+
+  // LIKE TARGET BOARD ARTICLE
+  public async likeTargetBoardArticle(
+    memberId: Types.ObjectId,
+    likeRefId: Types.ObjectId,
+  ): Promise<BoardArticle> {
+    const target = await this.boardArticleModel
+      .findOne({
+        _id: likeRefId,
+        articleStatus: BoardArticleStatus.ACTIVE,
+      })
+      .exec();
+
+    if (!target) {
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    }
+
+    const input: LikeInput = {
+      memberId: memberId,
+      likeRefId: likeRefId,
+      likeGroup: LikeGroup.ARTICLE,
+    };
+
+    // LIKE TOGGLE +1 / -1
+    const modifier: number = await this.likeService.toggleLike(input);
+
+    const result = await this.boardArticleStatusEditor({
+      _id: likeRefId,
+      targetKey: "articleLikes",
+      modifier: modifier,
+    });
+
+    if (!result) {
+      throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+    }
+
+    return result;
   }
 
   // GET ALL BOARD ARTICLES BY ADMIN
@@ -327,12 +377,13 @@ export class BoardArticleService {
       throw new InternalServerErrorException(Message.UPDATE_FAILED);
     }
 
-    // ARTICLE DELETE bo'lsa memberArticles -1
-    await this.memberService.memberStatusEditor({
-      _id: shapeIntoMongoObjectId(result.memberId),
-      targetKey: "memberArticles",
-      modifier: -1,
-    });
+    if (articleStatus === BoardArticleStatus.DELETE) {
+      await this.memberService.memberStatusEditor({
+        _id: shapeIntoMongoObjectId(result.memberId),
+        targetKey: "memberArticles",
+        modifier: -1,
+      });
+    }
 
     return result;
   }

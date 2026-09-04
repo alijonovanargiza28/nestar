@@ -1,6 +1,8 @@
 import { Args, Mutation, Query, Resolver } from "@nestjs/graphql";
-import { MemberService } from "./member.service";
 import { UseGuards } from "@nestjs/common";
+import mongoose from "mongoose";
+
+import { MemberService } from "./member.service";
 
 import {
   AgentsInquiry,
@@ -13,9 +15,11 @@ import { Message } from "../../libs/enums/common.enum";
 
 import { AuthGuard } from "../auth/guards/auth.guard";
 import { AuthMember } from "../auth/decorators/authMember.decorator";
+
 import { MemberType } from "../../libs/enums/member.enum";
 import { Roles } from "../auth/decorators/roles.decorator";
 import { RolesGuard } from "../auth/guards/roles.guard";
+
 import { MemberUpdate } from "../../libs/dto/member/member.update";
 
 import {
@@ -32,15 +36,11 @@ import { createWriteStream } from "fs";
 
 import { Member, Members } from "../../libs/dto/member/member";
 
-import mongoose from "mongoose";
-
 @Resolver()
 export class MemberResolver {
   constructor(private readonly memberService: MemberService) {}
 
-  // ============================================================
-  // SIGNUP
-  // ============================================================
+  // ========================= SIGNUP =========================
 
   @Mutation(() => Member)
   public async signup(@Args("input") input: MemberInput): Promise<Member> {
@@ -49,9 +49,7 @@ export class MemberResolver {
     return await this.memberService.signup(input);
   }
 
-  // ============================================================
-  // LOGIN
-  // ============================================================
+  // ========================= LOGIN =========================
 
   @Mutation(() => Member)
   public async login(@Args("input") input: LoginInput): Promise<Member> {
@@ -60,9 +58,7 @@ export class MemberResolver {
     return await this.memberService.login(input);
   }
 
-  // ============================================================
-  // CHECK AUTH
-  // ============================================================
+  // ========================= CHECK AUTH =========================
 
   @UseGuards(AuthGuard)
   @Query(() => String)
@@ -76,9 +72,7 @@ export class MemberResolver {
     return `Hi ${memberNick}`;
   }
 
-  // ============================================================
-  // CHECK AUTH ROLES
-  // ============================================================
+  // ========================= CHECK AUTH ROLES =========================
 
   @Roles(MemberType.USER, MemberType.AGENT)
   @UseGuards(RolesGuard)
@@ -91,35 +85,28 @@ export class MemberResolver {
     return `HI ${authMember.memberNick}, you are ${authMember.memberType} (memberId: ${authMember._id})`;
   }
 
-  // ============================================================
-  // UPDATE MEMBER
-  // ============================================================
+  // ========================= UPDATE MEMBER =========================
 
   @UseGuards(AuthGuard)
   @Mutation(() => Member)
   public async updateMember(
     @Args("input") input: MemberUpdate,
-
     @AuthMember("_id")
     memberId: mongoose.Types.ObjectId,
   ): Promise<Member> {
     console.log("Mutation: updateMember");
 
-    // _id ni update qilishga ruxsat bermaymiz
     delete input._id;
 
     return await this.memberService.updateMember(memberId, input);
   }
 
-  // ============================================================
-  // GET MEMBER
-  // ============================================================
+  // ========================= GET MEMBER =========================
 
   @UseGuards(WithoutGuard)
   @Query(() => Member)
   public async getMember(
     @Args("memberId") input: string,
-
     @AuthMember("_id")
     memberId: mongoose.Types.ObjectId,
   ): Promise<Member> {
@@ -130,15 +117,12 @@ export class MemberResolver {
     return await this.memberService.getMember(memberId, targetId);
   }
 
-  // ============================================================
-  // GET AGENTS
-  // ============================================================
+  // ========================= GET AGENTS =========================
 
   @UseGuards(WithoutGuard)
   @Query(() => Members)
-  public async getArgumentValues(
+  public async getAgents(
     @Args("input") input: AgentsInquiry,
-
     @AuthMember("_id")
     memberId: mongoose.Types.ObjectId,
   ): Promise<Members> {
@@ -147,9 +131,23 @@ export class MemberResolver {
     return await this.memberService.getAgents(memberId, input);
   }
 
-  // ============================================================
-  // ADMIN - GET ALL MEMBERS
-  // ============================================================
+  // ========================= LIKE MEMBER =========================
+
+  @UseGuards(AuthGuard)
+  @Mutation(() => Member)
+  public async likeTargetMember(
+    @Args("memberId") input: string,
+    @AuthMember("_id")
+    memberId: mongoose.Types.ObjectId,
+  ): Promise<Member> {
+    console.log("Mutation: LikeTargetMember");
+
+    const likeRefId = shapeIntoMongoObjectId(input);
+
+    return await this.memberService.likeTargetMember(memberId, likeRefId);
+  }
+
+  // ========================= ADMIN =========================
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
@@ -162,9 +160,7 @@ export class MemberResolver {
     return await this.memberService.getAllMemberByAdmin(input);
   }
 
-  // ============================================================
-  // ADMIN - UPDATE MEMBER
-  // ============================================================
+  // ========================= ADMIN UPDATE =========================
 
   @Roles(MemberType.ADMIN)
   @UseGuards(RolesGuard)
@@ -177,9 +173,7 @@ export class MemberResolver {
     return await this.memberService.updateMemberByAdmin(input);
   }
 
-  // ============================================================
-  // IMAGE UPLOADER
-  // ============================================================
+  // ========================= IMAGE UPLOADER =========================
 
   @UseGuards(AuthGuard)
   @Mutation(() => String)
@@ -195,28 +189,22 @@ export class MemberResolver {
   ): Promise<string> {
     console.log("Mutation: imageUploader");
 
-    // filename tekshirish
     if (!filename) {
       throw new Error(Message.UPLOAD_FAILED);
     }
 
-    // file type tekshirish
     const validMime = validMimeTypes.includes(mimetype);
 
     if (!validMime) {
       throw new Error(Message.PROVIDE_ALLOWED_FORMAT);
     }
 
-    // unique image name
     const imageName = getSerialForImage(filename);
 
-    // file path
     const url = `uploads/${target}/${imageName}`;
 
-    // file stream
     const stream = createReadStream();
 
-    // save file
     const result = await new Promise<boolean>((resolve, reject) => {
       stream
         .pipe(createWriteStream(url))
@@ -235,9 +223,7 @@ export class MemberResolver {
     return url;
   }
 
-  // ============================================================
-  // MULTIPLE IMAGES UPLOADER
-  // ============================================================
+  // ========================= MULTIPLE IMAGES =========================
 
   @UseGuards(AuthGuard)
   @Mutation(() => [String])
@@ -259,23 +245,18 @@ export class MemberResolver {
         try {
           const { filename, mimetype, createReadStream } = await img;
 
-          // mime type tekshirish
           const validMime = validMimeTypes.includes(mimetype);
 
           if (!validMime) {
             throw new Error(Message.PROVIDE_ALLOWED_FORMAT);
           }
 
-          // unique image name
           const imageName = getSerialForImage(filename);
 
-          // file path
           const url = `uploads/${target}/${imageName}`;
 
-          // stream
           const stream = createReadStream();
 
-          // save image
           const result = await new Promise<boolean>((resolve, reject) => {
             stream
               .pipe(createWriteStream(url))
@@ -293,7 +274,10 @@ export class MemberResolver {
 
           uploadedImages[index] = url;
         } catch (err) {
-          console.log("Error, file missing!", err);
+          console.log(
+            "Error, file missing!",
+            err instanceof Error ? err.message : err,
+          );
         }
       },
     );

@@ -6,7 +6,7 @@ import {
 
 import { InjectModel } from "@nestjs/mongoose";
 
-import mongoose, { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 
 import {
   AgentsInquiry,
@@ -31,18 +31,31 @@ import { ViewGroup } from "../../libs/enums/view.enum";
 
 import { Member, Members } from "../../libs/dto/member/member";
 
+import { LikeInput } from "../../libs/dto/like/like.input";
+
+import { LikeGroup } from "../../libs/enums/like.enum";
+
+import { LikeService } from "../like/like.service";
+
+import { Follower, Following, MeFollowed } from "../../libs/dto/follow/follow";
+
 @Injectable()
 export class MemberService {
   constructor(
     @InjectModel("Member")
     private readonly memberModel: Model<Member>,
 
+    @InjectModel("Follow")
+    private readonly followModel: Model<Follower | Following>,
+
     private readonly authService: AuthService,
 
     private readonly viewService: ViewService,
+
+    private readonly likeService: LikeService,
   ) {}
 
-  /**=========================== signup =============================**/
+  // ========================= SIGNUP =========================
 
   public async signup(input: MemberInput): Promise<Member> {
     input.memberPassword = await this.authService.hashPassword(
@@ -65,7 +78,7 @@ export class MemberService {
     }
   }
 
-  /**=========================== login =============================**/
+  // ========================= LOGIN =========================
 
   public async login(input: LoginInput): Promise<Member> {
     const { memberNick, memberPassword } = input;
@@ -99,10 +112,10 @@ export class MemberService {
     return response;
   }
 
-  /**=========================== updateMember =============================**/
+  // ========================= UPDATE MEMBER =========================
 
   public async updateMember(
-    memberId: mongoose.Types.ObjectId,
+    memberId: Types.ObjectId,
     input: MemberUpdate,
   ): Promise<Member> {
     const result = await this.memberModel
@@ -127,11 +140,11 @@ export class MemberService {
     return result;
   }
 
-  /**=========================== getMember =============================**/
+  // ========================= GET MEMBER =========================
 
   public async getMember(
-    memberId: mongoose.Types.ObjectId | null,
-    targetId: mongoose.Types.ObjectId,
+    memberId: Types.ObjectId | null,
+    targetId: Types.ObjectId,
   ): Promise<Member> {
     const search: T = {
       _id: targetId,
@@ -148,6 +161,8 @@ export class MemberService {
     }
 
     if (memberId) {
+      // ================= VIEW =================
+
       const viewInput = {
         memberId: memberId,
         viewRefId: targetId,
@@ -173,21 +188,64 @@ export class MemberService {
 
         targetMember.memberViews++;
       }
+
+      // ================= LIKE =================
+
+      const likeInput: LikeInput = {
+        memberId: memberId,
+        likeRefId: targetId,
+        likeGroup: LikeGroup.MEMBER,
+      };
+
+      targetMember.meLiked =
+        await this.likeService.checkLikeExistence(likeInput);
+
+      // ================= FOLLOW =================
+
+      targetMember.meFollowed = await this.checkSubscription(
+        memberId,
+        targetId,
+      );
     }
 
     return targetMember;
   }
 
-  /**=========================== getAgents =============================**/
+  // ========================= CHECK SUBSCRIPTION =========================
+
+  private async checkSubscription(
+    followerId: Types.ObjectId,
+    followingId: Types.ObjectId,
+  ): Promise<MeFollowed[]> {
+    const result = await this.followModel
+      .findOne({
+        followingId: followingId,
+        followerId: followerId,
+      })
+      .exec();
+
+    return result
+      ? [
+          {
+            followerId: followerId,
+            followingId: followingId,
+            myFollowing: true,
+          },
+        ]
+      : [];
+  }
+
+  // ========================= GET AGENTS =========================
 
   public async getAgents(
-    memberId: mongoose.Types.ObjectId,
+    memberId: Types.ObjectId,
     input: AgentsInquiry,
   ): Promise<Members> {
     const { text } = input.search;
 
     const match: T = {
       memberType: MemberType.AGENT,
+
       memberStatus: MemberStatus.ACTIVE,
     };
 
@@ -244,7 +302,46 @@ export class MemberService {
     return result[0];
   }
 
-  /**=========================== getAllMemberByAdmin =============================**/
+  // ========================= LIKE MEMBER =========================
+
+  public async likeTargetMember(
+    memberId: Types.ObjectId,
+    likeRefId: Types.ObjectId,
+  ): Promise<Member> {
+    const target = await this.memberModel
+      .findOne({
+        _id: likeRefId,
+        memberStatus: MemberStatus.ACTIVE,
+      })
+      .exec();
+
+    if (!target) {
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    }
+
+    const input: LikeInput = {
+      memberId: memberId,
+      likeRefId: likeRefId,
+      likeGroup: LikeGroup.MEMBER,
+    };
+
+    // LIKE TOGGLE -1 / +1
+    const modifier: number = await this.likeService.toggleLike(input);
+
+    const result = await this.memberStatusEditor({
+      _id: likeRefId,
+      targetKey: "memberLikes",
+      modifier: modifier,
+    });
+
+    if (!result) {
+      throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+    }
+
+    return result;
+  }
+
+  // ========================= GET ALL MEMBER BY ADMIN =========================
 
   public async getAllMemberByAdmin(input: MembersInquiry): Promise<Members> {
     const { memberStatus, memberType, text } = input.search;
@@ -312,7 +409,7 @@ export class MemberService {
     return result[0];
   }
 
-  /**=========================== updateMemberByAdmin =============================**/
+  // ========================= UPDATE MEMBER BY ADMIN =========================
 
   public async updateMemberByAdmin(input: MemberUpdate): Promise<Member> {
     const result = await this.memberModel
@@ -328,48 +425,48 @@ export class MemberService {
     return result;
   }
 
-  /**=========================== memberStatusEditor =============================**/
-public async memberStatusEditor(
-  input: StatisticModifier,
-): Promise<Member> {
-  const { _id, targetKey, modifier } = input;
+  // ========================= MEMBER STATUS EDITOR =========================
 
-  console.log("INPUT ID:", _id);
-  console.log("MODEL COLLECTION:", this.memberModel.collection.name);
-  console.log("MODEL DB:", this.memberModel.db.name);
+  public async memberStatusEditor(input: StatisticModifier): Promise<Member> {
+    const { _id, targetKey, modifier } = input;
 
-  const allMembers = await this.memberModel
-    .find({})
-    .select("_id memberNick memberArticles")
-    .limit(10)
-    .lean()
-    .exec();
+    console.log("INPUT ID:", _id);
 
-  console.log("MEMBERS:", allMembers);
+    console.log("MODEL COLLECTION:", this.memberModel.collection.name);
 
-  const member = await this.memberModel
-    .findById(_id)
-    .exec();
+    console.log("MODEL DB:", this.memberModel.db.name);
 
-  console.log("FOUND MEMBER:", member);
+    const allMembers = await this.memberModel
+      .find({})
+      .select("_id memberNick memberArticles")
+      .limit(10)
+      .lean()
+      .exec();
 
-  const result = await this.memberModel
-    .findByIdAndUpdate(
-      _id,
-      {
-        $inc: {
-          [targetKey]: modifier,
+    console.log("MEMBERS:", allMembers);
+
+    const member = await this.memberModel.findById(_id).exec();
+
+    console.log("FOUND MEMBER:", member);
+
+    const result = await this.memberModel
+      .findByIdAndUpdate(
+        _id,
+        {
+          $inc: {
+            [targetKey]: modifier,
+          },
         },
-      },
-      {
-        new: true,
-      },
-    )
-    .exec();
+        {
+          new: true,
+        },
+      )
+      .exec();
 
-  if (!result) {
-    throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    if (!result) {
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    }
+
+    return result;
   }
-
-  return result;
-}}
+}

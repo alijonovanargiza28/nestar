@@ -5,8 +5,7 @@ import {
 } from "@nestjs/common";
 
 import { InjectModel } from "@nestjs/mongoose";
-
-import mongoose, { Model } from "mongoose";
+import { Model, Types } from "mongoose";
 
 import moment = require("moment");
 
@@ -32,8 +31,11 @@ import { StatisticModifier, T } from "../../libs/types/common";
 import { lookupMember, shapeIntoMongoObjectId } from "../../libs/config";
 
 import { MemberService } from "../member/member.service";
-
 import { ViewService } from "../view/view.service";
+
+import { LikeInput } from "../../libs/dto/like/like.input";
+import { LikeGroup } from "../../libs/enums/like.enum";
+import { LikeService } from "../like/like.service";
 
 @Injectable()
 export class PropertyService {
@@ -44,6 +46,8 @@ export class PropertyService {
     private readonly memberService: MemberService,
 
     private readonly viewService: ViewService,
+
+    private readonly likeService: LikeService,
   ) {}
 
   /**=========================== createProperty =============================**/
@@ -72,8 +76,8 @@ export class PropertyService {
   /**=========================== getProperty =============================**/
 
   public async getProperty(
-    memberId: mongoose.Types.ObjectId,
-    propertyId: mongoose.Types.ObjectId,
+    memberId: Types.ObjectId,
+    propertyId: Types.ObjectId,
   ): Promise<Property> {
     const search: T = {
       _id: propertyId,
@@ -107,6 +111,15 @@ export class PropertyService {
 
         targetProperty.propertyViews++;
       }
+
+      const likeInput: LikeInput = {
+        memberId,
+        likeRefId: propertyId,
+        likeGroup: LikeGroup.PROPERTY,
+      };
+
+      targetProperty.meLiked =
+        await this.likeService.checkLikeExistence(likeInput);
     }
 
     targetProperty.memberData = await this.memberService.getMember(
@@ -117,12 +130,10 @@ export class PropertyService {
     return targetProperty;
   }
 
-  /**=========================== propertyStatsEditor =============================**/
-
   /**=========================== updateProperty =============================**/
 
   public async updateProperty(
-    memberId: mongoose.Types.ObjectId,
+    memberId: Types.ObjectId,
     input: PropertyUpdate,
   ): Promise<Property> {
     let { propertyStatus, soldAt, deletedAt } = input;
@@ -172,7 +183,7 @@ export class PropertyService {
   /**=========================== getProperties =============================**/
 
   public async getProperties(
-    memberId: mongoose.Types.ObjectId,
+    memberId: Types.ObjectId,
     input: PropertiesInquiry,
   ): Promise<Properties> {
     const match: T = {
@@ -313,7 +324,7 @@ export class PropertyService {
   /**=========================== getAgentProperties =============================**/
 
   public async getAgentProperties(
-    memberId: mongoose.Types.ObjectId,
+    memberId: Types.ObjectId,
     input: AgentPropertiesInquiry,
   ): Promise<Properties> {
     const { propertyStatus } = input.search;
@@ -377,6 +388,44 @@ export class PropertyService {
     }
 
     return result[0];
+  }
+
+  /**=========================== likeTargetProperty =============================**/
+
+  public async likeTargetProperty(
+    memberId: Types.ObjectId,
+    likeRefId: Types.ObjectId,
+  ): Promise<Property> {
+    const target = await this.propertyModel
+      .findOne({
+        _id: likeRefId,
+        propertyStatus: PropertyStatus.ACTIVE,
+      })
+      .exec();
+
+    if (!target) {
+      throw new InternalServerErrorException(Message.NO_DATA_FOUND);
+    }
+
+    const input: LikeInput = {
+      memberId,
+      likeRefId,
+      likeGroup: LikeGroup.PROPERTY,
+    };
+
+    const modifier: number = await this.likeService.toggleLike(input);
+
+    const result = await this.propertyStatsEditor({
+      _id: likeRefId,
+      targetKey: "propertyLikes",
+      modifier,
+    });
+
+    if (!result) {
+      throw new InternalServerErrorException(Message.SOMETHING_WENT_WRONG);
+    }
+
+    return result;
   }
 
   /**=========================== getAllPropertiesByAdmin =============================**/
@@ -496,7 +545,7 @@ export class PropertyService {
   /**=========================== removePropertyByAdmin =============================**/
 
   public async removePropertyByAdmin(
-    propertyId: mongoose.Types.ObjectId,
+    propertyId: Types.ObjectId,
   ): Promise<Property> {
     const search: T = {
       _id: propertyId,
@@ -511,6 +560,9 @@ export class PropertyService {
 
     return result;
   }
+
+  /**=========================== propertyStatsEditor =============================**/
+
   public async propertyStatsEditor(
     input: StatisticModifier,
   ): Promise<Property> {

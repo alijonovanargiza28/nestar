@@ -5,6 +5,8 @@ import {
   MemberStatus,
   MemberType,
 } from "../../enums/member.enum";
+import { MeLiked } from "../like/like";
+import { MeFollowed } from "../follow/follow";
 
 @ObjectType()
 export class Member {
@@ -62,10 +64,10 @@ export class Member {
   memberComments!: number;
 
   @Field(() => Int)
- memberPoints!: {
-  type: Number,
-  default: 0,
-}
+  memberPoints!: {
+    type: Number;
+    default: 0;
+  };
 
   @Field(() => Int)
   memberRank!: number;
@@ -87,6 +89,13 @@ export class Member {
 
   @Field(() => String, { nullable: true })
   accessToken?: string;
+
+  // from agregation
+  @Field(() => [MeLiked], { nullable: true })
+  meLiked?: MeLiked[];
+
+  @Field(() => [MeFollowed], { nullable: true })
+  meFollowed?: MeFollowed[];
 }
 
 @ObjectType()

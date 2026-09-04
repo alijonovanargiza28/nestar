@@ -6,6 +6,7 @@ import {
 } from "../../enums/board-article.enum";
 
 import { Member, TotalCounter } from "../member/member";
+import { MeLiked } from "../like/like";
 
 @ObjectType()
 export class BoardArticle {
@@ -44,6 +45,9 @@ export class BoardArticle {
 
   @Field(() => Date)
   updatedAt!: Date;
+
+  @Field(()=>[MeLiked],{nullable:true})
+  meLiked?:MeLiked[]
 
   @Field(() => Member, { nullable: true })
   memberData?: Member;

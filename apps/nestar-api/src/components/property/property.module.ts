@@ -6,6 +6,7 @@ import { ViewModule } from "../view/view.module";
 import { MemberModule } from "../member/member.module";
 import { PropertyResolver } from "./property.resolver";
 import { PropertyService } from "./property.service";
+import { LikeModule } from "../like/like.module";
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import { PropertyService } from "./property.service";
     ]),
     AuthModule,
     ViewModule,
-    MemberModule
+    MemberModule,
+    LikeModule,
   ],
   providers: [PropertyResolver, PropertyService],
   exports:[PropertyService]
