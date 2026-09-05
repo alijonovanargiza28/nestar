@@ -9,7 +9,7 @@ import { T } from "../../libs/types/common";
 @Injectable()
 export class LikeService {
   constructor(
-    @InjectModel("Like")
+    @InjectModel("like")
     private readonly likeModel: Model<Like>,
   ) {}
 
