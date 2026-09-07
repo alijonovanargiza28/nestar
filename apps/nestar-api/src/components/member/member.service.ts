@@ -148,7 +148,6 @@ export class MemberService {
   ): Promise<Member> {
     const search: T = {
       _id: targetId,
-
       memberStatus: {
         $in: [MemberStatus.ACTIVE, MemberStatus.BLOCK],
       },

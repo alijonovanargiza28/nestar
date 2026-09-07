@@ -64,14 +64,10 @@ export class Member {
   memberComments!: number;
 
   @Field(() => Int)
-  memberPoints!: {
-    type: Number;
-    default: 0;
-  };
+  memberPoints!: number;
 
   @Field(() => Int)
   memberRank!: number;
-
   @Field(() => Int)
   memberWarnings!: number;
 

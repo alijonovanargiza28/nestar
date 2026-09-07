@@ -3,23 +3,16 @@ import {
   Injectable,
   InternalServerErrorException,
 } from "@nestjs/common";
-
 import { InjectModel } from "@nestjs/mongoose";
 import { Model, Types } from "mongoose";
-
 import moment = require("moment");
-
 import { Properties, Property } from "../../libs/dto/property/property";
-
-import {
-  AgentPropertiesInquiry,
+import { AgentPropertiesInquiry,
   AllPropertiesInquiry,
   PropertiesInquiry,
   PropertyInput,
 } from "../../libs/dto/property/property.input";
-
 import { PropertyUpdate } from "../../libs/dto/property/property.update";
-
 import { Direction, Message } from "../../libs/enums/common.enum";
 
 import { PropertyStatus } from "../../libs/enums/property.enum";
@@ -28,7 +21,7 @@ import { ViewGroup } from "../../libs/enums/view.enum";
 
 import { StatisticModifier, T } from "../../libs/types/common";
 
-import { lookupMember, shapeIntoMongoObjectId } from "../../libs/config";
+import { lookupAuthMemberLiked, lookupMember, shapeIntoMongoObjectId } from "../../libs/config";
 
 import { MemberService } from "../member/member.service";
 import { ViewService } from "../view/view.service";
@@ -211,13 +204,9 @@ export class PropertyService {
         {
           $facet: {
             list: [
-              {
-                $skip: (input.page - 1) * input.limit,
-              },
-
-              {
-                $limit: input.limit,
-              },
+              {$skip: (input.page - 1) * input.limit,},
+              {$limit: input.limit,},
+              lookupAuthMemberLiked(memberId),
 
               lookupMember,
 
