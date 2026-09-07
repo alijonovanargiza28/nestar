@@ -28,7 +28,7 @@ import { BoardArticleStatus } from "../../libs/enums/board-article.enum";
 
 import { StatisticModifier, T } from "../../libs/types/common";
 
-import { lookupMember, shapeIntoMongoObjectId } from "../../libs/config";
+import { lookupAuthMemberLiked, lookupMember, shapeIntoMongoObjectId } from "../../libs/config";
 
 import { LikeService } from "../like/like.service";
 import { LikeInput } from "../../libs/dto/like/like.input";
@@ -222,6 +222,7 @@ export class BoardArticleService {
               {
                 $limit: input.limit,
               },
+              lookupAuthMemberLiked(memberId),
 
               lookupMember,
 

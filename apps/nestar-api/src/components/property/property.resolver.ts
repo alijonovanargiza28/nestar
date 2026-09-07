@@ -9,9 +9,11 @@ import { Properties, Property } from "../../libs/dto/property/property";
 import {
   AgentPropertiesInquiry,
   AllPropertiesInquiry,
+  OrdinaryInquiry,
   PropertiesInquiry,
   PropertyInput,
 } from "../../libs/dto/property/property.input";
+import { LikeService } from "../like/like.service";
 
 import { PropertyUpdate } from "../../libs/dto/property/property.update";
 
@@ -53,18 +55,35 @@ export class PropertyResolver {
   @UseGuards(WithoutGuard)
   @Query(() => Property)
   public async getProperty(
-    @Args("propertyId") propertyId: string,
-
-    @AuthMember("_id")
-    memberId: mongoose.Types.ObjectId,
+    @Args("input") propertyId: string,
+    @AuthMember("_id") memberId: mongoose.Types.ObjectId,
   ): Promise<Property> {
     console.log("Query: getProperty");
-
     const propertyObjectId = shapeIntoMongoObjectId(propertyId);
-
     return await this.propertyService.getProperty(memberId, propertyObjectId);
   }
 
+  @UseGuards(AuthGuard)
+  @Query(() => Properties)
+  public async getFavorites(
+    @Args("input") input: OrdinaryInquiry,
+    @AuthMember("_id") memberId: mongoose.Types.ObjectId,
+  ): Promise<Properties> {
+    console.log("Query: getFavorites");
+
+    return await this.propertyService.getFavorite(memberId, input);
+  }
+
+  @UseGuards(AuthGuard)
+  @Query(() => Properties)
+  public async getVisited(
+    @Args("input") input: OrdinaryInquiry,
+    @AuthMember("_id") memberId: mongoose.Types.ObjectId,
+  ): Promise<Properties> {
+    console.log("Query: getVisited");
+
+    return await this.propertyService.getFavorite(memberId, input);
+  }
   /**=========================== updateProperty =============================**/
 
   @Roles(MemberType.AGENT)

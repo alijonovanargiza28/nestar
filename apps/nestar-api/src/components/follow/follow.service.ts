@@ -14,7 +14,12 @@ import { MemberService } from "../member/member.service";
 import { Model, Types } from "mongoose";
 import { Direction, Message } from "../../libs/enums/common.enum";
 import { FollowInquiry } from "../../libs/dto/follow/follow.input";
-import { lookupFollowingData, lookupFollowerData } from "../../libs/config";
+import {
+  lookupFollowingData,
+  lookupFollowerData,
+  lookupAuthMemberLiked,
+  lookupAuthMemberFollowed,
+} from "../../libs/config";
 
 @Injectable()
 export class FollowService {
@@ -23,6 +28,10 @@ export class FollowService {
     private readonly followModel: Model<Follower | Following>,
     private readonly memberService: MemberService,
   ) {}
+
+  // =========================================================
+  // SUBSCRIBE
+  // =========================================================
 
   public async subscribe(
     followerId: Types.ObjectId,
@@ -55,6 +64,10 @@ export class FollowService {
     return result;
   }
 
+  // =========================================================
+  // REGISTER SUBSCRIPTION
+  // =========================================================
+
   private async registerSubscription(
     followerId: Types.ObjectId,
     followingId: Types.ObjectId,
@@ -70,6 +83,10 @@ export class FollowService {
       throw new BadRequestException(Message.CREATE_FAILED);
     }
   }
+
+  // =========================================================
+  // UNSUBSCRIBE
+  // =========================================================
 
   public async unsubscribe(
     followingId: Types.ObjectId,
@@ -105,6 +122,10 @@ export class FollowService {
     return result as Follower;
   }
 
+  // =========================================================
+  // GET MEMBER FOLLOWINGS
+  // =========================================================
+
   public async getMemberFollowings(
     memberId: Types.ObjectId,
     input: FollowInquiry,
@@ -126,21 +147,32 @@ export class FollowService {
         {
           $match: match,
         },
+
         {
           $sort: {
             createdAt: Direction.DESC,
           },
         },
+
         {
           $facet: {
             list: [
               {
                 $skip: (page - 1) * limit,
               },
+
               {
                 $limit: limit,
               },
+
+              lookupAuthMemberLiked(memberId, "$followingId"),
+              lookupAuthMemberFollowed({
+                followerId: memberId,
+                followingId: "$followingId",
+              })(memberId, "$followingId"),
+
               lookupFollowingData,
+
               {
                 $unwind: "$followingData",
               },
@@ -163,6 +195,10 @@ export class FollowService {
     return result[0];
   }
 
+  // =========================================================
+  // GET MEMBER FOLLOWERS
+  // =========================================================
+
   public async getMemberFollowers(
     memberId: Types.ObjectId,
     input: FollowInquiry,
@@ -184,21 +220,34 @@ export class FollowService {
         {
           $match: match,
         },
+
         {
           $sort: {
             createdAt: Direction.DESC,
           },
         },
+
         {
           $facet: {
             list: [
               {
                 $skip: (page - 1) * limit,
               },
+
               {
                 $limit: limit,
               },
 
+              // Member liked this follower member
+              lookupAuthMemberLiked(memberId, "$followerId"),
+
+              // Member followed this follower member
+              lookupAuthMemberFollowed({
+                followerId: memberId,
+                followingId: "$followerId",
+              })(memberId, "$followerId"),
+
+              // Get follower member data
               lookupFollowerData,
 
               {
@@ -216,7 +265,7 @@ export class FollowService {
       ])
       .exec();
 
-    if (!result.length) {
+    if (!result?.length) {
       throw new InternalServerErrorException(Message.NO_DATA_FOUND);
     }
 

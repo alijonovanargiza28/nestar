@@ -4,11 +4,12 @@ import {
   InternalServerErrorException,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
-import { Model, Types } from "mongoose";
+import { Model, ObjectId, Types } from "mongoose";
 import moment = require("moment");
 import { Properties, Property } from "../../libs/dto/property/property";
 import { AgentPropertiesInquiry,
   AllPropertiesInquiry,
+  OrdinaryInquiry,
   PropertiesInquiry,
   PropertyInput,
 } from "../../libs/dto/property/property.input";
@@ -204,8 +205,8 @@ export class PropertyService {
         {
           $facet: {
             list: [
-              {$skip: (input.page - 1) * input.limit,},
-              {$limit: input.limit,},
+              { $skip: (input.page - 1) * input.limit },
+              { $limit: input.limit },
               lookupAuthMemberLiked(memberId),
 
               lookupMember,
@@ -308,6 +309,20 @@ export class PropertyService {
         [element]: true,
       }));
     }
+  }
+
+  public async getFavorite(
+    memberId: Types.ObjectId,
+    input: OrdinaryInquiry,
+  ): Promise<Properties> {
+    return await this.likeService.getFavoriteProperties(memberId, input);
+  }
+
+  public async getVisited(
+    memberId: Types.ObjectId,
+    input: OrdinaryInquiry,
+  ): Promise<Properties> {
+    return await this.viewService.getVisitedProperties(memberId, input);
   }
 
   /**=========================== getAgentProperties =============================**/
