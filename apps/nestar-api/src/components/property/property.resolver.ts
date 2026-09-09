@@ -1,11 +1,8 @@
 import { Args, Mutation, Query, Resolver } from "@nestjs/graphql";
 import { UseGuards } from "@nestjs/common";
 import mongoose from "mongoose";
-
 import { PropertyService } from "./property.service";
-
 import { Properties, Property } from "../../libs/dto/property/property";
-
 import {
   AgentPropertiesInquiry,
   AllPropertiesInquiry,

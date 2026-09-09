@@ -71,24 +71,26 @@ export class LikeService {
   }
 
   public async getFavoriteProperties(
+    //Ma'lum bir member tomonidan favorite qilingan property'larni olib kelish.
     memberId: Types.ObjectId,
+    //Bu kimning favorite property'larini qidirayotganimizni bildiradi. Ali qaysi property'larni favorite qilgan?
     input: OrdinaryInquiry,
   ): Promise<Properties> {
     const { page, limit } = input;
 
     const match: T = {
-      likeGroup: LikeGroup.PROPERTY,
-      memberId: memberId,
+      likeGroup: LikeGroup.PROPERTY,// faqat property bolishi kerak
+      memberId: memberId,//aynan shu odamni like bolishi kerak
     };
 
     const data: T = await this.likeModel
       .aggregate([
         {
-          $match: match,
+          $match: match, //Faqat shu memberning property like'larini ol.
         },
         {
           $sort: {
-            updatedAt: -1,
+            updatedAt: -1, //-1 → yangi ma'lumot birinchi.
           },
         },
         {
@@ -100,7 +102,7 @@ export class LikeService {
           },
         },
         {
-          $unwind: "$favoriteProperty",
+          $unwind: "$favoriteProperty", //$unwind uni oddiy object qiladi:
         },
         {
           $facet: {
@@ -111,7 +113,7 @@ export class LikeService {
               {
                 $limit: limit,
               },
-              lookupFavorite,
+              lookupFavorite, //U property'ga favorite qilgan member haqida ma'lumot qo'shadi.
               {
                 $unwind: "$favoriteProperty.memberData",
               },

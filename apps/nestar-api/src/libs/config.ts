@@ -70,49 +70,66 @@ export const shapeIntoMongoObjectId = (
 // =========================================================
 // LOOKUP MEMBER
 // =========================================================
-
+//login bolgan user biror narsaga like bosganmi yoqmi tekshirish mantigi
+//memberId login bolgan userni idsi
+//$lookup — MongoDB'da boshqa collectiondan ma'lumot olib kelish uchun ishlatiladi.
+//from -> Qaysi collectionga borib qidiramiz?
+//let ichida vaqtinchalik o‘zgaruvchilar yaratamiz. Ya'ni aggregation ichida ishlatish uchun qiymatlarni nomlab olamiz.
 export const lookupAuthMemberLiked=(memberId:T,targetRefId:string = "$_id")=>{
   return {
-$lookup:{
-  from:"likes",
-  let:{
-    localLikeRefId:targetRefId,
-    localMemberId:memberId,
-    localMyFavorite:true,
-  },
-  pipeline:[
-    {
-      $match:{
-        $expr:{
-          $and:[{$eq:["$likeRefId", "$$localLikeRefId"]},{$eq:["$memberId","$$localMemberId"]}],
-        }
-      }
+    $lookup: {
+      from: "likes",
+      let: {
+        localLikeRefId: targetRefId,
+        localMemberId: memberId,
+        localMyFavorite: true,
+      },
+      //pipeline: Mana shu yerda:likes collectionidan qaysi ma'lumotlarni olish kerakligini yozamiz
+      pipeline: [
+        {
+          //$match — filter.Ya'ni:Faqat menga kerakli like'ni top.
+          $match: {
+            $expr: {
+              // $expr MongoDB'ga:Bu yerda fieldlarni boshqa qiymatlar bilan solishtiraman degan imkoniyat beradi.
+              $and: [
+                { $eq: ["$likeRefId", "$$localLikeRefId"] },
+                { $eq: ["$memberId", "$$localMemberId"] },
+              ],
+              // likes.likeRefId == current property's _id
+              //likes.memberId = login bo‘lgan memberId deganidir.
+              // $and: Ikkala shart ham true bo‘lishi kerak.
+              // Ikkalasi ham YES bo‘lsa:Bu user shu property'ni like qilgan
+            },
+          },
+        },
+        {
+          $project: {
+            //$project:Natijada qaysi fieldlarni ko‘rsatish kerak? deganidir.
+            _id: 0, //_id ni natijaga chiqarma.
+            memberId: 1,//chiqar
+            likeRefId: 1, //+
+            myFavorite: "$$localMyFavorite",
+          },
+        },
+      ],
+      as: "meLiked", //topilgan nasijanimeLiked nomi bn saqla
     },
-    {
-      $project:{
-        _id:0,
-        memberId:1,
-        likeRefId:1,
-        myFavorite:"$$localMyFavorite",
-      }
-    }
-  ],
-   as:"meLiked",
-}
-  }
+  };
 }
 
 interface LookupAuthMemberFollowed{
   followerId:T;
   followingId:string;
 }
+//Bir member boshqa memberni follow qilganmi?
 export const lookupAuthMemberFollowed =
-  (input: LookupAuthMemberFollowed) =>
+  (input: LookupAuthMemberFollowed) =>//followerId, followingId
   (memberId: T, targetRefId: string = "$_id") => {
-    const {followerId, followingId}= input;
+    //Bu esa birinchi function qaytarayotgan ikkinchi function.
+    const { followerId, followingId } = input;
     return {
       $lookup: {
-        from: "follows",
+        from: "follows", //collectionga boramiz
         let: {
           localFollowerId: followerId,
           localFollowingId: followingId,
@@ -121,7 +138,9 @@ export const lookupAuthMemberFollowed =
         pipeline: [
           {
             $match: {
+              //Menga kerakli follow recordni top.
               $expr: {
+                //Collection fieldlarini let variablelari bilan solishtiraman.
                 $and: [
                   { $eq: ["$followerId", "$$localFollowerId"] },
                   { $eq: ["$followingId", "$$localFollowingId"] },
@@ -141,7 +160,7 @@ export const lookupAuthMemberFollowed =
         as: "meFollowed",
       },
     };
-  };
+  };  
 
 export const lookupMember = {
   $lookup: {
