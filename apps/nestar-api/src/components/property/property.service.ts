@@ -192,44 +192,33 @@ export class PropertyService {
 
     console.log("match:", match);
 
-    const result = await this.propertyModel
-      .aggregate([
-        {
-          $match: match,
-        },
+ const result = await this.propertyModel
+   .aggregate([
+     { $match: match },
+     { $sort: sort },
+     {
+       $facet: {
+         list: [
+           { $skip: (input.page - 1) * input.limit },
+           { $limit: input.limit },
+           lookupAuthMemberLiked(memberId),
+           lookupMember,
+           {
+             $unwind: "$memberData",
+           },
+         ],
+         metaCounter: [{ $count: "total" }],
+       },
+     },
+   ])
+   .exec();
 
-        {
-          $sort: sort,
-        },
-
-        {
-          $facet: {
-            list: [
-              { $skip: (input.page - 1) * input.limit },
-              { $limit: input.limit },
-              lookupAuthMemberLiked(memberId),
-
-              lookupMember,
-
-              {
-                $unwind: "$memberData",
-              },
-            ],
-
-            metaCounter: [
-              {
-                $count: "total",
-              },
-            ],
-          },
-        },
-      ])
-      .exec();
+    
 
     if (!result.length) {
       throw new InternalServerErrorException(Message.NO_DATA_FOUND);
     }
-
+console.log("result+++++++++++++++",result)
     return result[0];
   }
 

@@ -10,7 +10,7 @@ import {
 @Controller()
 export class NestarBatchController {
   private logger: Logger = new Logger("BatchController");
-
+  //Bu NestarBatchController serverda avtomatik ravishda ma'lum vaqtda ishlarni bajarish uchun yozilgan.
   constructor(private readonly nestarBatchService: NestarBatchService) {}
 
   // Har kuni 01:00:00 da ishlaydi

@@ -42,10 +42,11 @@ export class NestarBatchService {
       const { _id, propertyLikes, propertyViews } = ele;
       const rank = propertyLikes * 2 + propertyViews * 1;
       return await this.propertyModel.findByIdAndUpdate(_id, {
+        //5. Database'dagi rankni update qilish
         propertyRank: rank,
       });
     });
-    await Promise.all(promisedList);
+    await Promise.all(promisedList); //bo‘lmasa, method barcha update'lar tugashini kutmasligi mumkin.
   }
   public async batchTopAgents(): Promise<void> {
     const agents: Member[] = await this.memberModel

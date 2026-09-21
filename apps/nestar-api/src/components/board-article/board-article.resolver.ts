@@ -1,10 +1,8 @@
 import { Args, Mutation, Query, Resolver } from "@nestjs/graphql";
 import { UseGuards } from "@nestjs/common";
 import mongoose from "mongoose";
-
 import { BoardArticleService } from "./board-article.service";
 import { AuthGuard } from "../auth/guards/auth.guard";
-
 import {
   BoardArticle,
   BoardArticles,
