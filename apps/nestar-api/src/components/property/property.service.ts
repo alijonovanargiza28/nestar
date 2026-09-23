@@ -242,25 +242,25 @@ console.log("result+++++++++++++++",result)
       match.memberId = shapeIntoMongoObjectId(memberId);
     }
 
-    if (locationList?.length) {
+    if (locationList && locationList.length ) {
       match.propertyLocation = {
         $in: locationList,
       };
     }
 
-    if (roomList?.length) {
+    if (roomList && roomList.length) {
       match.propertyRooms = {
         $in: roomList,
       };
     }
 
-    if (bedsList?.length) {
+    if (bedsList && bedsList.length) {
       match.propertyBeds = {
         $in: bedsList,
       };
     }
 
-    if (typeList?.length) {
+    if (typeList && typeList.length) {
       match.propertyType = {
         $in: typeList,
       };
